@@ -2,8 +2,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpException,
-  HttpStatus,
   Param,
   Post,
   Put,
@@ -16,11 +14,12 @@ import {
 import { FileService } from './file.service';
 import { FindFilesDto, HeaderWithTokens } from './file.types';
 import { TokenService } from 'src/tokens/token.service';
-import { FileMessages } from './file.errors';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { createWriteStream, unlinkSync } from 'fs';
 
 import type { Response } from 'express';
+import { handleError } from 'src/errors/error-handler';
+import { errorMessages } from 'src/errors/messages-and-codes';
 
 @Controller('file')
 export class FileController {
@@ -36,12 +35,7 @@ export class FileController {
       const res = await this.fileService.findMany(dto);
       return res;
     } catch (err) {
-      let error = (err as Error)?.message;
-      if (error.includes('properties of undefined'))
-        error = FileMessages.NoHeaders;
-      const status = FileMessages[error] || HttpStatus.BAD_REQUEST;
-
-      throw new HttpException({ status, error }, status);
+      throw handleError(err as Error);
     }
   }
 
@@ -63,7 +57,6 @@ export class FileController {
         extension,
         mimeType: file.mimetype,
         size: file.size,
-        path: '',
       };
       const res = await this.fileService.create(fileForDB);
 
@@ -73,17 +66,9 @@ export class FileController {
       ws.write(
         file.buffer instanceof Buffer ? file.buffer : String(file.buffer),
       );
-
-      fileForDB.path = String(ws.path);
-
       return res;
     } catch (err) {
-      let error = (err as Error)?.message;
-      if (error.includes('properties of undefined'))
-        error = FileMessages.NoHeaders;
-      const status = FileMessages[error] || HttpStatus.BAD_REQUEST;
-
-      throw new HttpException({ status, error }, status);
+      throw handleError(err as Error);
     }
   }
 
@@ -96,17 +81,12 @@ export class FileController {
     try {
       await this.tokenService.checkIfBTValid(req.headers.authorization);
 
-      const file = await this.fileService.download(id);
-      return res.sendFile(`${file.id}-${file.name}.${file.extension}`, {
+      const file = await this.fileService.findOne(id);
+      return res.sendFile(`${id}-${file.name}.${file.extension}`, {
         root: 'uploads/',
       });
     } catch (err) {
-      let error = (err as Error)?.message;
-      if (error.includes('properties of undefined'))
-        error = FileMessages.NoHeaders;
-      const status = FileMessages[error] || HttpStatus.BAD_REQUEST;
-
-      throw new HttpException({ status, error }, status);
+      throw handleError(err as Error);
     }
   }
 
@@ -121,7 +101,6 @@ export class FileController {
       await this.tokenService.checkIfBTValid(req.headers.authorization);
 
       const oldFile = await this.fileService.findOne(id);
-      // if (oldFile === null) throw Error
 
       const fileName = file.originalname;
       const extension = fileName.split('.')[fileName.split('.').length - 1];
@@ -146,12 +125,7 @@ export class FileController {
       );
       return res;
     } catch (err) {
-      let error = (err as Error)?.message;
-      if (error.includes('properties of undefined'))
-        error = FileMessages.NoHeaders;
-      const status = FileMessages[error] || HttpStatus.BAD_REQUEST;
-
-      throw new HttpException({ status, error }, status);
+      throw handleError(err as Error);
     }
   }
 
@@ -164,12 +138,7 @@ export class FileController {
       unlinkSync(`./uploads/${id}-${res.name}.${res.extension}`);
       return res;
     } catch (err) {
-      let error = (err as Error)?.message;
-      if (error.includes('properties of undefined'))
-        error = FileMessages.NoHeaders;
-      const status = FileMessages[error] || HttpStatus.BAD_REQUEST;
-
-      throw new HttpException({ status, error }, status);
+      throw handleError(err as Error);
     }
   }
 
@@ -180,12 +149,7 @@ export class FileController {
       const res = await this.fileService.findOne(id);
       return res;
     } catch (err) {
-      let error = (err as Error)?.message;
-      if (error.includes('properties of undefined'))
-        error = FileMessages.NoHeaders;
-      const status = FileMessages[error] || HttpStatus.BAD_REQUEST;
-
-      throw new HttpException({ status, error }, status);
+      throw handleError(err as Error);
     }
   }
 }

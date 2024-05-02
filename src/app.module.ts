@@ -1,17 +1,15 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MulterModule } from '@nestjs/platform-express';
 import { join } from 'path';
 import { FileModule } from './files';
 import { UserModule } from './user';
 import { TokenModule } from './tokens/token.module';
-import { MulterModule } from '@nestjs/platform-express';
-// import { ServeStaticModule } from '@nestjs/serve-static';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
-
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -27,7 +25,6 @@ import { MulterModule } from '@nestjs/platform-express';
       inject: [ConfigService],
     }),
     MulterModule.register({ dest: './uploads' }),
-
     FileModule,
     UserModule,
     TokenModule,

@@ -6,7 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { UserEntity } from './user.entity';
 import { UserDataForDb, UserDtoWithRefresh } from './user.dto';
 import { TokenService, bearerPrefix } from '../tokens/token.service';
-import { UserMessages } from './user.errors';
+import { errorMessages } from '../errors/messages-and-codes';
 
 @Injectable()
 export class UserService {
@@ -38,7 +38,7 @@ export class UserService {
       const message = (error as Error).message.toLowerCase();
 
       if (message.includes('duplicate')) {
-        throw Error(UserMessages.UserAlreadyExists);
+        throw Error(errorMessages.UserAlreadyExists);
       } else {
         throw Error(message);
       }
@@ -47,25 +47,33 @@ export class UserService {
 
   async login({ login, password }: UserDataForDb) {
     const user = await this.userRepository.findOne({ where: { login } });
-    if (user === null) throw new Error(UserMessages.UserNotFound);
+    if (user === null) throw new Error(errorMessages.UserNotFound);
 
     if (bcrypt.compareSync(password, user.password)) {
       return this.tokenService.create(user.id);
     } else {
-      throw Error(UserMessages.InvalidPassword);
+      throw Error(errorMessages.InvalidPassword);
     }
   }
 
-  async refreshAuthToken({ login, password, refresh }: UserDtoWithRefresh) {
-    const { userId } = this.tokenService.isTokenValid(refresh);
+  async refreshAuthToken({
+    login,
+    password,
+    refreshToken,
+  }: UserDtoWithRefresh) {
+    const { userId } = this.tokenService.isTokenValid(refreshToken);
 
     const user = await this.userRepository.findOne({ where: { login } });
-    if (user === null) throw new Error(UserMessages.UserNotFound);
+    if (user === null) throw new Error(errorMessages.UserNotFound);
 
-    if (userId === user.id && bcrypt.compareSync(password, user.password)) {
-      return this.tokenService.updateWithRefreshToken(refresh);
+    if (userId === user.id) {
+      if (bcrypt.compareSync(password, user.password)) {
+        return this.tokenService.updateWithRefreshToken(refreshToken);
+      } else {
+        throw new Error(errorMessages.InvalidPassword);
+      }
     } else {
-      throw new Error(UserMessages.InvalidRefreshToken);
+      throw new Error(errorMessages.RefreshTokenExpired);
     }
   }
 
@@ -80,7 +88,7 @@ export class UserService {
     } else {
       const RTData = this.tokenService.isTokenValid(bearerToken);
       if (RTData) userId = RTData.userId;
-      else throw new Error(UserMessages.InvalidRefreshToken);
+      else throw new Error(errorMessages.RefreshTokenExpired);
     }
     const { login } = await this.userRepository.findOne({
       where: { id: userId },
@@ -101,7 +109,7 @@ export class UserService {
 
   isEmailValid(email: string) {
     const res = /\S+@\S+\.\S+/.test(email);
-    if (!res) throw new Error(UserMessages.InvalidEmail);
+    if (!res) throw new Error(errorMessages.InvalidEmail);
   }
 
   isPhonenumberValid(phone: string) {
@@ -113,6 +121,6 @@ export class UserService {
       .replaceAll('-', '');
     const sliced = digits.match(/\d*/)[0];
 
-    if (sliced !== digits) throw new Error(UserMessages.InvalidPhone);
+    if (sliced !== digits) throw new Error(errorMessages.InvalidPhone);
   }
 }

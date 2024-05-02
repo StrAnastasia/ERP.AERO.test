@@ -3,13 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { TokensEntity } from './tokens.entity';
 import { Repository } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
+import { errorMessages } from 'src/errors/messages-and-codes';
 
-const JWT_TOKEN = 'DEV_JWT_TOKEN';
+const JWT_TOKEN = process.env.JWT_TOKEN || 'DEV_JWT_TOKEN';
 export const bearerPrefix = 'Bearer ';
-
-const TokensErrors = {
-  RefreshTokenExpired: 'refresh token expired, login again',
-};
 
 @Injectable()
 export class TokenService {
@@ -62,7 +59,7 @@ export class TokenService {
     const isAuth = this.isTokenValid(bearerToken.replace(bearerPrefix, ''));
 
     if (!isAuth || !foundTokenPair.length)
-      throw Error(TokensErrors.RefreshTokenExpired);
+      throw Error(errorMessages.RefreshTokenExpired);
   }
 
   async deleteTokenPair(tokens: { bearerToken: string; refreshToken: string }) {

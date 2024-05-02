@@ -9,8 +9,7 @@ export interface UserDataForDb {
 }
 
 export interface UserDtoWithRefresh extends UserDataForDb {
-  refresh: string;
-  bearer?: string;
+  refreshToken: string;
 }
 
 export interface HeaderWithTokens {
