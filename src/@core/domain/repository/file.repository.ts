@@ -1,30 +1,40 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FileEntity } from './file.entity';
+import { FileEntity } from '../entity/file.entity';
 import { Repository } from 'typeorm';
-import { CreateFileDto, FindFilesDto, UpdateFileDto } from './file.types';
-import { errorMessages } from '../errors/messages-and-codes';
+import {
+  CreateFileDto,
+  FindFilesDto,
+  UpdateFileDto,
+} from '../entity/file.types';
+import { errorMessages } from '../../../errors/messages-and-codes';
 
 @Injectable()
-export class FileService {
+export class FileRepository extends Repository<FileEntity> {
   constructor(
     @InjectRepository(FileEntity)
     private readonly fileRepository: Repository<FileEntity>,
-  ) {}
+  ) {
+    super(
+      fileRepository.target,
+      fileRepository.manager,
+      fileRepository.queryRunner,
+    );
+  }
 
-  async create(dto: CreateFileDto) {
+  async createFile(dto: CreateFileDto) {
     const file = this.fileRepository.create(dto);
     return await this.fileRepository.save(file);
   }
 
-  async update(id: number, dto: UpdateFileDto) {
+  async updateFile(id: number, dto: UpdateFileDto) {
     const file = await this.fileRepository.findOne({ where: { id } });
     if (!file) throw new Error(errorMessages.FileNotFound);
 
     return await this.fileRepository.save({ ...file, ...dto });
   }
 
-  async delete(id: number) {
+  async deleteFile(id: number) {
     const file = await this.fileRepository.findOne({ where: { id } });
     if (!file) throw new Error(errorMessages.FileNotFound);
 
@@ -39,10 +49,10 @@ export class FileService {
     return files.map((file) => this.toResponse(file));
   }
 
-  async findOne(id: number) {
+  async findOneFile(id: number) {
     const file = await this.fileRepository.findOne({ where: { id } });
     if (!file) throw Error(errorMessages.FileNotFound);
-    return this.toResponse(file);
+    return file;
   }
 
   toResponse(fileObj: FileEntity) {

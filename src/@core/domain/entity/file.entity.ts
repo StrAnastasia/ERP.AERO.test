@@ -19,6 +19,8 @@ export class FileEntity {
   mimeType: string;
   @Column()
   size: number;
+  @Column({ nullable: false })
+  fileForDownload: string;
 
   @CreateDateColumn()
   dateCreated: Date;

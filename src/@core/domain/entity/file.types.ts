@@ -3,6 +3,7 @@ export interface CreateFileDto {
   extension: string;
   mimeType: string;
   size: number;
+  fileForDownload: string;
 }
 
 export interface FileResponse {
@@ -27,8 +28,6 @@ export interface FindFilesDto {
 }
 
 export interface HeaderWithTokens {
-  headers: {
-    authorization: string;
-    refresh_token: string;
-  };
+  authorization: string;
+  refresh_token: string;
 }

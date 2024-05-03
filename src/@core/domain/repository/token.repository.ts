@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { TokensEntity } from './tokens.entity';
+import { TokensEntity } from '../entity/tokens.entity';
 import { Repository } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import { errorMessages } from 'src/errors/messages-and-codes';
@@ -9,13 +9,19 @@ const JWT_TOKEN = process.env.JWT_TOKEN || 'DEV_JWT_TOKEN';
 export const bearerPrefix = 'Bearer ';
 
 @Injectable()
-export class TokenService {
+export class TokenRepository extends Repository<TokensEntity> {
   constructor(
     @InjectRepository(TokensEntity)
     private readonly tokenRepository: Repository<TokensEntity>,
-  ) {}
+  ) {
+    super(
+      tokenRepository.target,
+      tokenRepository.manager,
+      tokenRepository.queryRunner,
+    );
+  }
 
-  async create(userId: number) {
+  async createTokenPair(userId: number) {
     const bearerToken = this.generateBearerToken(userId);
     const refreshToken = this.generateRefreshToken(userId);
 
@@ -30,7 +36,7 @@ export class TokenService {
     };
   }
 
-  isTokenValid(token: string) {
+  isTokenValid(token: string): { userId: number } {
     try {
       return jwt.verify(token, JWT_TOKEN);
     } catch (error) {
@@ -52,7 +58,7 @@ export class TokenService {
     };
   }
 
-  async checkIfBTValid(bearerToken: string) {
+  async checkIfBTValid(bearerToken: string): Promise<{ userId: number }> {
     const foundTokenPair = await this.tokenRepository.findBy({
       bearerToken: bearerToken.replace(bearerPrefix, ''),
     });
@@ -60,6 +66,8 @@ export class TokenService {
 
     if (!isAuth || !foundTokenPair.length)
       throw Error(errorMessages.RefreshTokenExpired);
+
+    return isAuth;
   }
 
   async deleteTokenPair(tokens: { bearerToken: string; refreshToken: string }) {

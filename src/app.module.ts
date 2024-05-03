@@ -3,9 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MulterModule } from '@nestjs/platform-express';
 import { join } from 'path';
-import { FileModule } from './files';
-import { UserModule } from './user';
-import { TokenModule } from './tokens/token.module';
+import { CoreModule } from '@core/core.module';
+import { UserController } from './controllers/user.controller';
+import { FileController } from './controllers/file.controller';
+import { ServeStaticModule } from '@nestjs/serve-static';
 
 @Module({
   imports: [
@@ -25,9 +26,10 @@ import { TokenModule } from './tokens/token.module';
       inject: [ConfigService],
     }),
     MulterModule.register({ dest: './uploads' }),
-    FileModule,
-    UserModule,
-    TokenModule,
+    ServeStaticModule.forRoot({ rootPath: join(__dirname, '..', 'uploads') }),
+
+    CoreModule,
   ],
+  controllers: [UserController, FileController],
 })
 export class AppModule {}

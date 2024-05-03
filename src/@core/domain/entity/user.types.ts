@@ -13,8 +13,6 @@ export interface UserDtoWithRefresh extends UserDataForDb {
 }
 
 export interface HeaderWithTokens {
-  headers: {
-    authorization: string;
-    refresh_token: string;
-  };
+  authorization: string;
+  refresh_token: string;
 }
